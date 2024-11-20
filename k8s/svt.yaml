@@ -1,0 +1,73 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: svt
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: svt
+  namespace: svt
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: svt
+  template:
+    metadata:
+      name: svt
+      labels:
+        name: svt
+    spec:
+        containers:
+        - name: svt
+          image: 'repo/image:version'
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: svt
+  namespace: svt
+  labels:
+    app: svt
+spec:
+  ports:
+    - name: '8080'
+      port: 8080
+      targetPort: 8080
+      protocol: TCP
+  selector:
+    name: svt
+  type: ClusterIP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    cert-manager.io/cluster-issuer: x
+    ingress.kubernetes.io/force-ssl-redirect: "true"
+    kubernetes.io/ingress.class: contour
+    kubernetes.io/tls-acme: "true"
+    projectcontour.io/tls-minimum-protocol-version: TLSv1_2
+  name: svt-ingress
+  namespace: svt
+spec:
+  rules:
+  - host: hostname.example.com
+    http:
+      paths:
+      - backend:
+          service:
+            name: svt
+            port:
+              number: 8080
+        path: /
+        pathType: Prefix
+  tls:
+  - hosts:
+    - hostname.example.com
+    secretName: svt-tls
+
